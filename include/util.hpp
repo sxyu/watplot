@@ -3,9 +3,10 @@
 #include<vector>
 #include<utility>
 #include<random>
-namespace watmaps {
+namespace watplot {
     // helpers
     namespace util {
+        /** generate random alphanumeric [A-Za-z0-9] string of length 'length' */
         std::string random_string(std::string::size_type length);
 
         template<class T>
@@ -152,5 +153,8 @@ namespace watmaps {
           * @param reverse if true, color map is reversed
           **/
         void applyColorMapViridis(const cv::Mat& gray, cv::Mat& color, bool reverse=false);
+
+        /** Rounds a double to the given number of digits and returns as a string */
+        std::string round(double dbl, int digs);
    }
 }

@@ -23,6 +23,8 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <unistd.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,10 +39,10 @@
 
 // compatibility
 #ifndef max
-    #define max(x, y) ((x) > (y)) ? (x) : (y)
+    #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 #ifndef min
-    #define min(x, y) ((x) < (y)) ? (x) : (y)
+    #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 #ifndef M_PI
     #define M_PI 3.14159265358979323846264338327950288

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "util.hpp"
-namespace watmaps {
+namespace watplot {
     namespace util {
         /* from SO */
         std::string random_string(std::string::size_type length)
@@ -549,12 +549,19 @@ namespace watmaps {
             cv::Mat p = gray.reshape(0, 1).clone();
             cv::Mat c = color.reshape(0, 1).clone();
             for (int i = 0; i < p.cols; i++) {
-                c.at<cv::Vec3b>(0, i)[0] = lut_b[p.at<uchar>(0, i)];
-                c.at<cv::Vec3b>(0, i)[1] = lut_g[p.at<uchar>(0, i)];
-                c.at<cv::Vec3b>(0, i)[2] = lut_r[p.at<uchar>(0, i)];
+                c.at<cv::Vec3b>(0, i)[0] = (uchar)lut_b[p.at<uchar>(0, i)];
+                c.at<cv::Vec3b>(0, i)[1] = (uchar)lut_g[p.at<uchar>(0, i)];
+                c.at<cv::Vec3b>(0, i)[2] = (uchar)lut_r[p.at<uchar>(0, i)];
             }
 
             color = c.reshape(0, gray.rows);
+        }
+
+        std::string round(double dbl, int digs) {
+            std::stringstream sstm;
+            sstm << std::fixed << std::setprecision(digs);
+            sstm << dbl;
+            return sstm.str();
         }
     }
 }

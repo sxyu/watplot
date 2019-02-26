@@ -2,7 +2,7 @@
 #include<string>
 #include<vector>
 #include<map>
-namespace watmaps {
+namespace watplot {
     struct consts {
     private:
         static std::map<std::string, char> _header_keyword_types() {
@@ -51,10 +51,26 @@ namespace watmaps {
                 return vec;
         }
 
+        static unsigned long long get_system_memory()
+        {
+#ifdef _WIN32
+            MEMORYSTATUSEX status;
+            status.dwLength = sizeof(status);
+            GlobalMemoryStatusEx(&status);
+            return status.ullTotalPhys;
+#else
+            long pages = sysconf(_SC_PHYS_PAGES);
+            long page_size = sysconf(_SC_PAGE_SIZE);
+            return pages * page_size;
+#endif
+        }
+
     public:
         /* Map of allowed keywords and their types */
         static const std::map<std::string, char> HEADER_KEYWORD_TYPES;
         /* List of telescopes (index i = name of telescope with ID i, e.g., 6 is GBT) */
         static const std::vector<std::string> TELESCOPES;
+        /* System memory size, in bytes */
+        static const int64_t MEMORY;
     };
 }
