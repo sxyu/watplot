@@ -1,13 +1,15 @@
-# watplot: Interactive Waterfall Diagrams
- c) Alex Yu 2018
+# watplot: Interactive Waterfall Plots
+(c) Alex Yu 2018
+
+This is a work in progress.
 
 ## Overview
-Interactive waterfall diagram system for Breakthrough Listen data.
+Interactive waterfall plot system for Breakthrough Listen data, supporting drag, zoom, changing color map on the fly for large files.
 Currently, only .fil (sigproc filterbank) files are supported. HDF5 support is planned.
 
-Build: use`cmake.
+Build: use cmake.
 
-Usage: watplot file.fil`
+Usage: `watplot file.fil`
 
 Sample data: [https://storage.googleapis.com/gbt_fil/voyager_f1032192_t300_v2.fil](https://storage.googleapis.com/gbt_fil/voyager_f1032192_t300_v2.fil)
 
