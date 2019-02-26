@@ -43,6 +43,7 @@ set(
   SOURCES
   filterbank.cpp
   util.cpp
+  stdafx.cpp
 )
 
 set(
@@ -81,7 +82,6 @@ if ( MSVC )
     set_source_files_properties( ${SOURCES}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PRECOMPILED_HEADER}\" /FI\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
                                            OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )
-    set( SOURCES ${SOURCES} ${PRECOMPILED_SOURCE} )
     add_definitions( -D_CRT_SECURE_NO_WARNINGS )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot" )
     set( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
