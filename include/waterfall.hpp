@@ -167,12 +167,14 @@ namespace watplot {
 
 
         /** helper for projecting plot point to (time, frequency) space */
-        inline cv::Point2d plot_to_time_freq(const cv::Point2d & point) const {
+        inline cv::Point2d plot_to_time_freq(cv::Point2d point) const {
             double dx = render_rect.width / plot_size.height;
             double dy = render_rect.height / plot_size.width;
-            double px = point.x * dx + render_rect.x;
-            double py = point.y * dy + render_rect.y;
-            return cv::Point2d(px, py);
+            point.y = plot_size.height - point.y - 1;
+            std::swap(point.x, point.y);
+            point.x = point.x * dx + render_rect.x;
+            point.y = point.y * dy + render_rect.y;
+            return point;
         }
 
     private:
