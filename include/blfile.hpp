@@ -37,11 +37,6 @@ namespace watplot {
 
             if (header.foff < 0) std::reverse(freqs.begin(), freqs.end());
             if (header.tsamp < 0) std::reverse(timestamps.begin(), timestamps.end());
-
-            if (header.nbits != 32) {
-                std::cerr << header.nbits << " bit data not supported. Currently only 32 bit is supported.\n";
-                std::exit(3);
-            }
         }
 
         /** Load rectangle of data into memory as a 2D prefix-sum matrix
@@ -177,7 +172,7 @@ namespace watplot {
             file.freqs.front() << ", " << file.freqs.back() << "]\n";
         o << "Bits per sample:\t" << file.header.nbits << "\n\nStatistics\n";
         o << "File size:\t\t" << file.file_size_bytes << " bytes (data: " << file.data_size_bytes << ")\n";
-        o << "Min, mean, max:\t\t" << file.min_val << ", " << file.mean_val << ", " << file.max_val << "\n";
+        o << "Approx min, mean, max:\t" << file.min_val << ", " << file.mean_val << ", " << file.max_val << "\n";
         o << "---------------------------------\n";
         return o;
     }

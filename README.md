@@ -15,6 +15,8 @@ A interactive waterfall plot for Breakthrough Listen data, supporting dragging, 
 
 *Build:* Use cmake on all platforms: `mkdir build && cd build && cmake ..`
 
+Then use `make -j4` to build. On Windows, you may double-click the sln file generated to open Visual Studio to build.
+
 You may need to specify the installation directory for OpenCV, OpenCV_dir.
 
 ## Usage

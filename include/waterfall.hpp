@@ -9,6 +9,7 @@ namespace watplot {
         // terminology: render=what is displayed to user; view=chunk of data cached in memory, larger than render
         /** Create plot from file, initial rectangle, plot size, etc.
           * Does not take ownership of file, so please do not destroy it before the waterfall.
+          * @param file data file
           * @param wind_name OpenCV window name. If empty, does not show plot (although image is still returned by render())
           * @param init_render_rect initial rectangle to render (by default, renders entire file)
           * @param plot_size size of output plot
@@ -29,14 +30,14 @@ namespace watplot {
             // find appropriate amount of memory to allocate
             view_scale_x = static_cast<int>(sqrt(mem_limit / plot_size.area()));
             view_scale_y = view_scale_x;
-            // support very skinny/
+            // support very skinny data
             if (plot_size.height * view_scale_x > file.nints) {
                 view_scale_x = static_cast<double>(file.nints) / plot_size.height;
-                view_scale_y = floor(mem_limit / file.nints);
+                view_scale_y = floor(mem_limit / file.nints) /plot_size.width;
             }
             else if (plot_size.width * view_scale_y > file.header.nchans) {
                 view_scale_y = file.header.nchans / plot_size.width;
-                view_scale_x = floor(mem_limit / file.header.nchans);
+                view_scale_x = floor(mem_limit / file.header.nchans) / plot_size.height;
             }
 
             double color_fact = 1.1;
@@ -46,16 +47,15 @@ namespace watplot {
 
         volatile bool rendering = false;
 
-        /** Render given rectangle to an image of size plot_size
-          * @param rect bounds of region to render
+        /** Render to an image of size plot_size
           * @param recompute_view 2=force recompute; 0=force use old view; 1=smart
           * @param rendered image. CV_8UC3
           */
         cv::Mat render(int recompute_view = 1) {
             if (rendering) return last_render;
             rendering = true;
-            // debug implementation
             if (recompute_view == 2) {
+                // placeholder implementation, if recompute_view=1 should recompute when needed
                 view_rect = file.view(render_rect, view,
                     static_cast<int>(plot_size.height * view_scale_x), static_cast<int>(plot_size.width * view_scale_y));
             }
@@ -112,7 +112,7 @@ namespace watplot {
                     cv::putText(cb_color, util::round((i / color_scale - color_offset) / 1e9, 2),
                         cv::Point(10, cb_color.rows * (255 - i) / 255 + 5), 0, 0.4, cv::Scalar(255, 255, 255));
                 }
-                // leave a gap
+                // leave a gap to left of colorbar
                 cv::hconcat(cv::Mat::zeros(cb_color.rows, 3, CV_8UC3), cb_color, cb_color);
                 cv::hconcat(wat_color, cb_color, wat_color);
             }
