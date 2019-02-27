@@ -14,18 +14,53 @@ namespace watplot {
         data_size_bytes = file_size_bytes - header_end;
 
         int64_t nbytes = (header.nbits / 8);
-        int64_t bufsize = max(consts::MEMORY / 10 / nbytes, 1);
-        Eigen::VectorXf buf(bufsize);
+        int64_t bufsize = int64_t(min(max(consts::MEMORY / 10, 10), int(1e8) / nbytes));
+        char * buf = new char[bufsize + 1];
         int64_t total = 0;
-        while (true) {
-            ifs.read((char*)buf.data(), bufsize * nbytes);
+        //while (true) {
+            ifs.read(buf, bufsize);
             int64_t nread = ifs.gcount() / nbytes;
-            max_val = max(buf.head(nread).maxCoeff(), max_val);
-            min_val = min(buf.head(nread).minCoeff(), min_val);
             total += nread;
-            mean_val += buf.head(nread).cast<double>().mean() / data_size_bytes * nread * nbytes;
-            if (!ifs) break;
-        }
+
+            if (nbytes == 4) {
+                // float
+                Eigen::Map<Eigen::VectorXf> map((float*)buf, nread);
+                max_val = max(double(map.maxCoeff()), max_val);
+                min_val = min(double(map.minCoeff()), min_val);
+                mean_val += map.sum();
+            }
+            else if (nbytes == 8) {
+                // double
+                Eigen::Map<Eigen::VectorXd> map((double*)buf, nread);
+                max_val = max(map.maxCoeff(), max_val);
+                min_val = min(map.minCoeff(), min_val);
+                mean_val += map.sum();
+            }
+            else if (nbytes == 2) {
+                // 16 bit int
+                Eigen::Map<Eigen::Matrix<uint16_t, Eigen::Dynamic, 1>> map((uint16_t*) buf, nread);
+                max_val = max(double(map.maxCoeff()), max_val);
+                min_val = min(double(map.minCoeff()), min_val);
+                mean_val += map.cast<double>().sum();
+            }
+            else if (nbytes == 1) {
+                // 8 bit int
+                Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, 1>> map((uint8_t*) buf, nread);
+                max_val = max(double(map.maxCoeff()), max_val);
+                min_val = min(double(map.minCoeff()), min_val);
+                mean_val += map.cast<double>().sum();
+            }
+            else {
+                std::cerr << "Error: Unsupported data width: " << header.nbits << " (only 8, 16, 32 bit data supported)\n";
+                std::exit(4);
+            }
+
+            //std::cerr << total * 100.0 / data_size_bytes << "%\n";
+            //if (!ifs) break;
+        //}
+        mean_val /= total;
+        std::cerr << "\n";
+        delete[] buf;
     }
 
     cv::Rect2d Filterbank::_view(const cv::Rect2d & rect, Eigen::MatrixXd & out, int max_wid, int max_hi) const
@@ -45,7 +80,8 @@ namespace watplot {
                                             - timestamps.begin());
         int64_t f_step = max((f_hi - f_lo - 1) / max_hi + 1, 1LL);
         int64_t t_step = max((t_hi - t_lo - 1) / max_wid + 1, 1LL);
-        std::cerr << "Reloading data with f_step=" << f_step << " t_step=" << t_step << "\n";
+        std::cerr << "Filterbank-view: Reloading data file, with f_step=" << f_step << " t_step=" << t_step << " t=[" <<
+            t_lo << ", " << t_hi << "] f=[" << f_lo << ", " << f_hi << "]\nFilterbank-view: Allocating memory...\n";
 
         // swap if step is reversed in input data file
         if (header.foff < 0) {
@@ -75,11 +111,15 @@ namespace watplot {
         int64_t out_f_cnt;
         int64_t maxf = min(f_hi, header.nchans), maxt = min(t_hi, nints);
 
+        int64_t nbytes = (header.nbits / 8);
+        if ((maxf - f_lo) * (maxt - t_lo) * nbytes > 2e9) {
+            std::cerr << "WARNING: file exceeds 2GB, may take a long time to load.\n";
+        }
+
         {
-            int64_t nbytes = (header.nbits / 8);
             // buffer to load several columns at once
-            int64_t bufsize = max((consts::MEMORY / 12 / nbytes), maxf - f_lo);
-            Eigen::VectorXf buf(bufsize + 1);
+            int64_t bufsize = max((consts::MEMORY / 12), (maxf - f_lo) * nbytes);
+            char * buf = new char[bufsize + 1];
             int64_t last_read_pos = 0;
 
             // for every timestamp
@@ -88,13 +128,14 @@ namespace watplot {
 
                 out_f_cnt = 0;
                 int64_t pos = header_end + (t * header.nchans + f_lo) * nbytes;
-                int64_t offset = (pos - last_read_pos) / nbytes;
+                int64_t offset = pos - last_read_pos;
                 // try to use existing buffer if possible
-                if (!last_read_pos || offset + maxf - f_lo >= bufsize) {
+                if (!last_read_pos || offset + (maxf - f_lo) * nbytes >= bufsize) {
                     ifs.seekg(pos);
-                    ifs.read((char*)buf.data(), bufsize * nbytes);
+                    ifs.read(buf, bufsize);
                     last_read_pos = pos;
                     offset = 0;
+                    std::cerr << "Filterbank-view: Data file " << util::round(double(t - t_lo) / maxt * 00, 2) << "% loaded\n";
                 }
 
                 // for every frequency
@@ -103,11 +144,27 @@ namespace watplot {
                         out_f_cnt = 0;
                         ++out_data;
                     }
-                    *out_data += buf[offset + f];
+                    char * ptr = buf + offset + nbytes * f;
+                    if (nbytes == 4) {
+                        *out_data += *((float*)ptr);
+                    }
+                    else if (nbytes == 8) {
+                        *out_data += *((double*)ptr);
+                    }
+                    else if (nbytes == 2) {
+                        *out_data += *((uint16_t*)ptr);
+                    }
+                    else if (nbytes == 1) {
+                        *out_data += *((uint8_t*)ptr);
+                    }
                     ++out_f_cnt;
                 }
             }
+
+            delete[] buf;
         }
+
+        std::cerr << "Filterbank-view: 100% loaded, processing data in memory...\n";
 
         // reverse cols/rows if frequency/time axis is reversed
         if (header.foff < 0) {
