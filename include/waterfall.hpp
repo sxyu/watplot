@@ -33,7 +33,7 @@ namespace watplot {
             // support very skinny data
             if (plot_size.height * view_scale_x > file.nints) {
                 view_scale_x = static_cast<double>(file.nints) / plot_size.height;
-                view_scale_y = floor(mem_limit / file.nints) /plot_size.width;
+                view_scale_y = floor(mem_limit / file.nints) / plot_size.width;
             }
             else if (plot_size.width * view_scale_y > file.header.nchans) {
                 view_scale_y = file.header.nchans / plot_size.width;
@@ -58,6 +58,7 @@ namespace watplot {
                 // placeholder implementation, if recompute_view=1 should recompute when needed
                 view_rect = file.view(render_rect, view,
                     static_cast<int>(plot_size.height * view_scale_x), static_cast<int>(plot_size.width * view_scale_y));
+                std::cerr << "Waterfall-render: Updated view\n";
             }
 
             cv::Mat wat_raw(plot_size, CV_32F), wat_gray, wat_color;

@@ -80,7 +80,7 @@ namespace watplot {
                                             - timestamps.begin());
         int64_t f_step = max((f_hi - f_lo - 1) / max_hi + 1, 1LL);
         int64_t t_step = max((t_hi - t_lo - 1) / max_wid + 1, 1LL);
-        std::cerr << "Filterbank-view: Reloading data file, with f_step=" << f_step << " t_step=" << t_step << " t=[" <<
+        std::cerr << "Filterbank-view: Reloading data file, with t_step=" << t_step << " f_step=" << f_step << " t=[" <<
             t_lo << ", " << t_hi << "] f=[" << f_lo << ", " << f_hi << "]\nFilterbank-view: Allocating memory...\n";
 
         // swap if step is reversed in input data file
@@ -135,7 +135,7 @@ namespace watplot {
                     ifs.read(buf, bufsize);
                     last_read_pos = pos;
                     offset = 0;
-                    std::cerr << "Filterbank-view: Data file " << util::round(double(t - t_lo) / maxt * 00, 2) << "% loaded\n";
+                    std::cerr << "Filterbank-view: Data file " << util::round(double(t - t_lo) / maxt * 100, 2) << "% loaded\n";
                 }
 
                 // for every frequency
