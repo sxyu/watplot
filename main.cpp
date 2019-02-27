@@ -8,7 +8,7 @@
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 {
-    static bool mouse_down_left = false, mouse_down_right = false;
+    static int mouse_down;
     static int mouse_down_x, mouse_down_y;
     static cv::Rect2d rect;
     static cv::Size plot_size;
@@ -16,39 +16,39 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
     static cv::Vec2d color;
     auto * watrend = (watplot::WaterfallRenderer<watplot::Filterbank> *) (userdata);
 
-    if (event == cv::EVENT_LBUTTONDOWN)
-    {
-        // one at a time
-        mouse_down_right = false;
+    if (event == cv::EVENT_RBUTTONDOWN ||
+        event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_MBUTTONDOWN) {
         mouse_down_x = x;
         mouse_down_y = y;
-        rect = watrend->get_render_rect();
-        plot_size = watrend->get_plot_size();
-        scalex = rect.width / plot_size.width;
-        scaley = rect.height / plot_size.height;
-        mouse_down_left = true;
+
+        if (event == cv::EVENT_LBUTTONDOWN)
+        {
+            rect = watrend->get_render_rect();
+            plot_size = watrend->get_plot_size();
+            scalex = rect.width / plot_size.width;
+            scaley = rect.height / plot_size.height;
+            mouse_down = 1;
+        }
+        else if (event == cv::EVENT_RBUTTONDOWN)
+        {
+            rect = watrend->get_render_rect();
+            color = watrend->get_color_scale_offset();
+            mouse_down = 2;
+        }
+        else //if (event == cv::EVENT_MBUTTONDOWN)
+        {
+            rect = watrend->get_render_rect();
+            mouse_down = 3;
+        }
     }
-    else if (event == cv::EVENT_LBUTTONUP)
+    else if (event == cv::EVENT_RBUTTONUP ||
+             event == cv::EVENT_LBUTTONUP || event == cv::EVENT_MBUTTONUP)
     {
-        mouse_down_left = false;
-    }
-    else if (event == cv::EVENT_RBUTTONDOWN)
-    {
-        mouse_down_left = false;
-        mouse_down_x = x;
-        mouse_down_y = y;
-        color = watrend->get_color_scale_offset();
-        mouse_down_right = true;
-    }
-    else if (event == cv::EVENT_RBUTTONUP)
-    {
-        mouse_down_right = false;
-    }
-    else if (event == cv::EVENT_MBUTTONDOWN)
-    {
+        mouse_down = 0;
     }
     else if (event == cv::EVENT_MOUSEWHEEL)
     {
+        // wheel scrolling, if supported 
         rect = watrend->get_render_rect();
         double delt = cv::getMouseWheelDelta(flags);
         double scale = 1.0 - delt / 1e4;
@@ -59,15 +59,21 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
     }
     else if (event == cv::EVENT_MOUSEMOVE)
     {
-        if (mouse_down_left) {
+        if (mouse_down == 1) {
             cv::Rect2d new_rect(rect.x + (y - mouse_down_y) * scalex, rect.y - (x - mouse_down_x) * scaley,
                                 rect.width, rect.height);
             watrend->set_render_rect(new_rect);
         }
-        else if (mouse_down_right) {
+        else if (mouse_down == 2) {
             cv::Vec2d new_color(color[0] * (1.0 + (y - mouse_down_y) * 1e-3), color[1] - (x - mouse_down_x) * 1e6);
             watrend->set_color_scale_offset(new_color);
         }
+        /*
+        else if (mouse_down == 3) {
+            // drag middle button: not used
+        }
+        */
+
     }
 }
 
@@ -83,6 +89,8 @@ int main(int argc, char** argv) {
     std::cout << "This is an early unstable version, for proof-of-concept purposes only\n";
     std::cout << "Only the filterbank (.fil) format is supported at the moment\n\n";
     std::cout << "Tips:\n- Right click and drag mouse to adjust colormap (horizontal: shift, vertical: scale)\n";
+    std::cout << "- Use the scroll wheel OR -,= keys to zoom\n";
+    std::cout << "- Press 0 to reset zoom\n";
     std::cout << "- Press s to save plot to ./waterfall-NUM.png\n";
     std::cout << "- Press q or ESC to exit\n";
     std::cout << "\n";
@@ -113,6 +121,18 @@ int main(int argc, char** argv) {
             std::string fname = "waterfall-" + util::padleft(++saveid, 3, '0') + ".png";
             cv::imwrite(fname, watrend.get_last_render());
             std::cout << "Saved to: " << fname << "\n";
+        } 
+        else if (k == 61 || k == 45) {
+            // = (+) key, - key resp.
+            double scale = k == 61 ? (1.0 - 1.5e-2) : (1.0 + 1.5e-2) ;
+            cv::Rect2d rect = watrend.get_render_rect();
+            cv::Rect2d new_rect(rect.x - (rect.width / 2) * (scale - 1.0),
+                    rect.y - (rect.height / 2) * (scale - 1.0),
+                    rect.width * scale, rect.height * scale);
+            watrend.set_render_rect(new_rect);
+        } else if (k == '0') {
+            // reset scale
+            watrend.set_render_rect(fb.get_full_rect());
         }
     }
     return 0;
