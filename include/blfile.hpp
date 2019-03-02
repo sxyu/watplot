@@ -102,6 +102,7 @@ namespace watplot {
 
             int64_t out_hi = (f_hi - f_lo) / f_step;
             int64_t out_wid = (t_hi - t_lo) / t_step;
+
             // allocate memory
             out.resize(out_hi + 2, out_wid + 2);
 

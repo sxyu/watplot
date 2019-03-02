@@ -4,8 +4,8 @@
 namespace watplot {
     cv::Mat Renderer::render(int recompute_view)
     {
-        cv::Mat res = _render(recompute_view);
         update_dxy();
+        cv::Mat res = _render(recompute_view);
         return res;
     }
 
@@ -95,24 +95,24 @@ namespace watplot {
         double area = double(br.x - tl.x) * (br.y - tl.y);
         if (area <= 0.0f) return 0.0f;
 
-        //cv::Point2i tl_i(int(ceil(tl.x)), int(ceil(tl.y)));
-        //cv::Point2i br_i(int(floor(br.x)), int(floor(br.y)));
-        cv::Point2i tl_o(int(floor(tl.x)), int(floor(tl.y)));
+        cv::Point2i tl_i(int(ceil(tl.x)), int(ceil(tl.y)));
+        cv::Point2i br_i(int(br.x), int(br.y));
+        cv::Point2i tl_o(int(tl.x), int(tl.y));
         cv::Point2i br_o(int(ceil(br.x)), int(ceil(br.y)));
 
-        //double area_i = (br_i.x - tl_i.x) * (br_i.y - tl_i.y);
+        double area_i = (br_i.x - tl_i.x) * (br_i.y - tl_i.y);
         double area_o = max((br_o.x - tl_o.x) * (br_o.y - tl_o.y), area);
 
-        //double ans_i = view(br_i.y, br_i.x) - view(tl_i.y, br_i.x) - view(br_i.y, tl_i.x) + view(tl_i.y, tl_i.x);
-        //ans_i /= area_i;
+        double ans_i = view(br_i.y, br_i.x) - view(tl_i.y, br_i.x) - view(br_i.y, tl_i.x) + view(tl_i.y, tl_i.x);
+        ans_i /= area_i;
 
         double ans_o = view(br_o.y, br_o.x) - view(tl_o.y, br_o.x) - view(br_o.y, tl_o.x) + view(tl_o.y, tl_o.x);
-        return static_cast<float>(ans_o) / area_o;
-        //if (area_i <= 0) return ans_o;
+        ans_o /= area_o;
+        if (area_i <= 0) return ans_o;
 
         // interpolate between inner, outer areas
-        //float fo = (area - area_i) / area_o;
-        //return fo * ans_o + (1. - fo) * ans_i;
+        float fo = (area - area_i) / area_o;
+        return fo * ans_o + (1. - fo) * ans_i;
     }
 }
 

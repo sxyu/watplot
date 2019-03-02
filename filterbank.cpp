@@ -137,9 +137,9 @@ namespace watplot {
         else if (nbytes == 1) {
             // 8 bit int
             Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, 1>> map((uint8_t*) buf, nread);
-            max_val = max(double(map.maxCoeff()), max_val);
-            min_val = min(double(map.minCoeff()), min_val);
-            mean_val += map.cast<double>().sum();
+            max_val = max(double(map.maxCoeff()) * 256, max_val);
+            min_val = min(double(map.minCoeff()) * 256, min_val);
+            mean_val += map.cast<double>().sum() * 256;
         }
         else {
             std::cerr << "Error: Unsupported data width: " << header.nbits << " (only 8, 16, 32 bit data supported)\n";
@@ -263,12 +263,12 @@ namespace watplot {
                         Eigen::Map<Eigen::VectorXd> out_mp(out_data, n_f_bins);
                         Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
                             in_mp((uint8_t*)(buf + offset), f_step, n_f_bins);
-                        out_mp += in_mp.colwise().sum().cast<double>();
+                        out_mp += in_mp.colwise().sum().cast<double>() * 256;
 
                         if (f_xtra_bin_size) {
                             double * out_mp_xtra = out_data + n_f_bins;
                             Eigen::Map<Eigen::Matrix<uint16_t, Eigen::Dynamic, 1>> in_mp_xtra((uint16_t*)(buf + offset) + f_step * n_f_bins, f_xtra_bin_size);
-                            *out_mp_xtra += static_cast<double>(in_mp_xtra.sum());
+                            *out_mp_xtra += static_cast<double>(in_mp_xtra.sum()) * 256;
                         }
                     }
                 }

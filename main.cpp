@@ -24,8 +24,8 @@ namespace {
             {
                 rect = watrend->get_render_rect();
                 plot_size = watrend->get_plot_size();
-                scalex = rect.width / plot_size.width;
-                scaley = rect.height / plot_size.height;
+                scalex = rect.width / plot_size.height;
+                scaley = rect.height / plot_size.width;
                 mouse_down = 1;
             }
             else if (event == cv::EVENT_RBUTTONDOWN)
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     std::cout << "Tips:\n- Right click and drag mouse to adjust colormap (horizontal: shift, vertical: scale)\n";
     std::cout << "- Press c,shift+c to cycle through colormaps (15 total)\n";
     std::cout << "- Use the scroll wheel OR -,= keys to zoom\n";
-    std::cout << "- Press 0 to reset zoom\n";
+    std::cout << "- Press 0 to reset zoom and position\n";
     std::cout << "- Press s to save plot to ./waterfall-NUM.png\n";
     std::cout << "- Press q or ESC to exit\n";
     std::cout << "\n";

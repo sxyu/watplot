@@ -99,8 +99,8 @@ namespace watplot {
         int64_t bufsize = int64_t(min(max(consts::MEMORY / 10, 10), int(2e8) / nbytes));
 
         hsize_t offset[3] = { 0, 0, 0 };
-        hsize_t count[3] = { min(bufsize / dims_out[2], dims_out[0]), 1, 0 };
-        count[2] = min(bufsize / count[0], dims_out[2]);
+        hsize_t count[3] = { min(max(bufsize / dims_out[2], 1), dims_out[0]), 1, 0 };
+        count[2] = min(max(bufsize / count[0], 1), dims_out[2]);
         dataspace.selectHyperslab(H5S_SELECT_SET, count, offset);
 
         std::string bufs;
@@ -164,16 +164,18 @@ namespace watplot {
         H5::DataSpace dataspace = dataset.getSpace();
 
         hsize_t offset[3] = { hsize_t(t_lo), 0, hsize_t(f_lo) };
-        hsize_t count[3] = { hsize_t(maxt - t_lo), 1, hsize_t(maxf - f_lo) };
         hsize_t stride[3] = { hsize_t(t_step), 1, hsize_t(f_step) };
+        hsize_t count[3] = { hsize_t(maxt - t_lo) / stride[0], 1, hsize_t(maxf - f_lo) / stride[2] };
         dataspace.selectHyperslab(H5S_SELECT_SET, count, offset, stride);
 
-        hsize_t mcount[2] = { count[0] / stride[0], count[2] / stride[2] };
-        H5::DataSpace memspace(2, mcount);
+        hsize_t mem_count[2] = { count[0], count[2] };
+        H5::DataSpace memspace(2, mem_count);
 
+        std::cerr << "HDF5-view: Reading data...\n";
         if (nbytes == 4) {
-            Eigen::MatrixXf buf(count[2] / stride[2], count[0] / stride[0]);
+            Eigen::MatrixXf buf(count[2], count[0]);
             dataset.read(buf.data(), H5::PredType::NATIVE_FLOAT, memspace, dataspace);
+            std::cerr << "HDF5-view: Copying from buffer...\n";
             for (int64_t i = out.cols() - 2; i > 0; --i) {
                 for (int64_t j = out.rows() - 2; j > 0; --j) {
                     out(j, i) = static_cast<double>(buf(j - 1, i - 1));
@@ -181,8 +183,9 @@ namespace watplot {
             }
         }
         else if (nbytes == 8) {
-            Eigen::MatrixXd buf(count[2] / stride[2], count[0] / stride[0]);
+            Eigen::MatrixXd buf(count[2], count[0]);
             dataset.read(buf.data(), H5::PredType::NATIVE_DOUBLE, memspace, dataspace);
+            std::cerr << "HDF5-view: Copying from buffer...\n";
             for (int64_t i = out.cols() - 2; i > 0; --i) {
                 for (int64_t j = out.rows() - 2; j > 0; --j) {
                     out(j, i) = buf(j - 1, i - 1);
@@ -190,8 +193,9 @@ namespace watplot {
             }
         }
         else if (nbytes == 2) {
-            Eigen::Matrix<uint16_t, Eigen::Dynamic, 1> buf(count[2] / stride[2], count[0] / stride[0]);
+            Eigen::Matrix<uint16_t, Eigen::Dynamic, 1> buf(count[2], count[0]);
             dataset.read(buf.data(), H5::PredType::NATIVE_UINT16, memspace, dataspace);
+            std::cerr << "HDF5-view: Copying from buffer...\n";
             for (int64_t i = out.cols() - 2; i > 0; --i) {
                 for (int64_t j = out.rows() - 2; j > 0; --j) {
                     out(j, i) = static_cast<double>(buf(j - 1, i - 1));
@@ -199,8 +203,9 @@ namespace watplot {
             }
         }
         else if (nbytes == 1) {
-            Eigen::Matrix<uint16_t, Eigen::Dynamic, 1>  buf(count[2] / stride[2], count[0] / stride[0]);
+            Eigen::Matrix<uint16_t, Eigen::Dynamic, 1>  buf(count[2], count[0]);
             dataset.read(buf.data(), H5::PredType::NATIVE_UINT8, memspace, dataspace);
+            std::cerr << "HDF5-view: Copying from buffer...\n";
             for (int64_t i = out.cols() - 2; i > 0; --i) {
                 for (int64_t j = out.rows() - 2; j > 0; --j) {
                     out(j, i) = static_cast<double>(buf(j - 1, i - 1));

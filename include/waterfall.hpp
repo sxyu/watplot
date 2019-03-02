@@ -32,21 +32,22 @@ namespace watplot {
                 render_rect = init_render_rect;
             }
 
-            int64_t mem_limit = consts::MEMORY / sizeof(float);
+            int64_t dtype_wid = sizeof(double);
+            int64_t mem_limit = consts::MEMORY / dtype_wid;
             // find appropriate amount of memory to allocate
             view_scale_x = static_cast<int>(sqrt(mem_limit / plot_size.area()));
             view_scale_y = view_scale_x;
             // support very skinny data
             if (plot_size.height * view_scale_x > file->nints) {
                 view_scale_x = static_cast<double>(file->nints) / plot_size.height;
-                view_scale_y = floor(mem_limit / file->nints) / plot_size.width;
+                view_scale_y = floor(mem_limit / (file->nints * dtype_wid)) / plot_size.width;
             }
             else if (plot_size.width * view_scale_y > file->header.nchans) {
                 view_scale_y = file->header.nchans / plot_size.width;
-                view_scale_x = floor(mem_limit / file->header.nchans) / plot_size.height;
+                view_scale_x = floor(mem_limit / (file->header.nchans * dtype_wid)) / plot_size.height;
             }
 
-            static const float COLOR_FACT = 1.75f, MAX_FACT = 2.5e-4f;
+            static const float COLOR_FACT = 1.2f, MAX_FACT = 3.5e-4f;
             float mean_scaled = ((1.f - MAX_FACT) * float(file->mean_val) + MAX_FACT * float(file->max_val));
             color_scale = 255.f / (mean_scaled * COLOR_FACT - float(file->min_val) / COLOR_FACT);
             color_offset = -float(file->min_val) / COLOR_FACT;
@@ -61,7 +62,8 @@ namespace watplot {
             if (recompute_view == 2) {
                 // placeholder implementation, if recompute_view=1 should recompute when needed
                 view_rect = file->view(render_rect, view,
-                    static_cast<int>(plot_size.height * view_scale_x), static_cast<int>(plot_size.width * view_scale_y));
+                    static_cast<int>(plot_size.height * view_scale_x),
+                    static_cast<int>(plot_size.width * view_scale_y));
                 update_dxy();
                 std::cerr << "Waterfall-render: Updated view\n";
             }
