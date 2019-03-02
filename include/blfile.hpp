@@ -3,40 +3,55 @@
 #include<vector>
 
 namespace watplot {
-    /** CRTP base class for all Breakthrough Listen data file formats
+    /** Base class for all Breakthrough Listen data file formats
      *  Note: do not actually instantiate this class
      *  Child classes must implement: _load, _view, _file_format */
     template <class ImplType>
     class BLFile {
     public:
+        /** Threshold (GB) above which file is considered large */
+        static const int LARGE_FILE_THRESH = 5;
+
         /** Read data file from a path (reads header, 'skims' data without loading it) */
         void load(const std::string & path) {
             file_path = path;
             std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
+            if (!in) {
+                std::cerr << "Fatal error: File not found (" << path << ")\n";
+                std::exit(1);
+            }
             file_size_bytes = in.tellg();
+
+            if (file_size_bytes > LARGE_FILE_THRESH * 1e9) {
+                std::cerr << "WARNING: file exceeds " << LARGE_FILE_THRESH << "GB; may take a while to load.\n";
+            }
+
             in.close();
 
             static_cast<ImplType *>(this)->_load(path);
 
             // precompute axes, rectangle
-            nints = data_size_bytes / (header.nbits / 8) / header.nchans;
-            data_rect.y = min(header.fch1, header.fch1 + header.foff * header.nchans);
-            data_rect.x = min(header.tstart, header.tstart + header.tsamp * nints);
-            data_rect.height = fabs(header.foff) * header.nchans;
-            data_rect.width = fabs(header.tsamp) * nints;
+            if (~header.nchans) {
+                if (~nints) nints = data_size_bytes / (header.nbits / 8) / header.nchans;
+                data_rect.y = min(header.fch1, header.fch1 + header.foff * header.nchans);
+                data_rect.x = min(header.tstart, header.tstart + header.tsamp * nints);
+                data_rect.height = fabs(header.foff) * header.nchans;
+                data_rect.width = fabs(header.tsamp) * nints;
+                freqs.reserve(header.nchans);
+                for (int i = 0; i < header.nchans; ++i) {
+                    freqs.push_back(header.fch1 + header.foff * i);
+                }
 
-            freqs.reserve(header.nchans);
-            for (int i = 0; i < header.nchans; ++i) {
-                freqs.push_back(header.fch1 + header.foff * i);
+                timestamps.reserve(nints);
+                for (int i = 0; i < nints; ++i) {
+                    timestamps.push_back(header.tstart + header.tsamp * i);
+                }
+
+                if (header.foff < 0) std::reverse(freqs.begin(), freqs.end());
+                if (header.tsamp < 0) std::reverse(timestamps.begin(), timestamps.end());
             }
 
-            timestamps.reserve(nints);
-            for (int i = 0; i < nints; ++i) {
-                timestamps.push_back(header.tstart + header.tsamp * i);
-            }
-
-            if (header.foff < 0) std::reverse(freqs.begin(), freqs.end());
-            if (header.tsamp < 0) std::reverse(timestamps.begin(), timestamps.end());
+            std::cerr << *this;
         }
 
         /** Load rectangle of data into memory as a 2D prefix-sum matrix
@@ -52,7 +67,81 @@ namespace watplot {
          * @return actual rectangle returned. May be rounded.
          */
         cv::Rect2d view(const cv::Rect2d & rect, Eigen::MatrixXd & out, int max_wid, int max_hi) const {
-            return static_cast<const ImplType *>(this)->_view(rect, out, max_wid, max_hi);
+            // convert to array indices
+            int64_t f_lo = static_cast<int64_t>(std::upper_bound(freqs.begin(), freqs.end(), rect.y) - freqs.begin()) - 1;
+            f_lo = max(0LL, f_lo);
+            int64_t f_hi = static_cast<int64_t>(std::upper_bound(freqs.begin(), freqs.end(), rect.y + rect.height)
+                - freqs.begin());
+            int64_t t_lo = static_cast<int64_t>(std::upper_bound(timestamps.begin(), timestamps.end(), rect.x)
+                - timestamps.begin()) - 1;
+            t_lo = max(0LL, t_lo);
+            int64_t t_hi = static_cast<int64_t>(std::upper_bound(timestamps.begin(), timestamps.end(), rect.x + rect.width)
+                - timestamps.begin());
+            int64_t f_step = max((f_hi - f_lo - 1) / max_hi + 1, 1LL);
+            int64_t t_step = max((t_hi - t_lo - 1) / max_wid + 1, 1LL);
+            std::cerr << "BLFile-view: Reloading data file, with t_step=" << t_step << " f_step=" << f_step << " t=[" <<
+                t_lo << ", " << t_hi << "] f=[" << f_lo << ", " << f_hi << "]\nBLFile-view: Allocating memory...\n";
+
+            // swap if step is reversed in input data file
+            if (header.foff < 0) {
+                f_lo = header.nchans - f_lo;
+                f_hi = header.nchans - f_hi;
+                std::swap(f_lo, f_hi);
+                f_lo = max(0LL, f_lo);
+            }
+            if (header.tsamp < 0) {
+                t_lo = nints - t_lo;
+                t_hi = nints - t_hi;
+                std::swap(t_lo, t_hi);
+            }
+
+            // round to multiple of step size
+            f_hi += (f_step - (f_hi - f_lo) % f_step) % f_step;
+            t_hi += (t_step - (t_hi - t_lo) % t_step) % t_step;
+
+
+            int64_t out_hi = (f_hi - f_lo) / f_step;
+            int64_t out_wid = (t_hi - t_lo) / t_step;
+            // allocate memory
+            out.resize(out_hi + 2, out_wid + 2);
+
+            // call viewer implementation 
+            static_cast<const ImplType *>(this)->_view(rect, out, t_lo, t_hi, t_step, f_lo, f_hi, f_step);
+
+            // reverse cols/rows if frequency/time axis is reversed
+            if (header.foff < 0) {
+                out.colwise().reverseInPlace();
+            }
+            if (header.tsamp < 0) {
+                out.rowwise().reverseInPlace();
+            }
+
+            // now compute prefix sum matrix from binned matrix
+            // sum columns
+            double * out_data = out.data() + out_hi + 2;
+            for (int64_t t = 0; t <= out_wid; ++t) {
+                std::partial_sum(out_data + t * (out_hi + 2),
+                    out_data + (t + 1) * (out_hi + 2),
+                    out_data + t * (out_hi + 2));
+            }
+
+            double area = double(f_step * t_step);
+            out /= area;
+
+            // sum column sums
+            out_data = out.data() + (out_hi + 2) * 2;
+            for (int64_t t = 1; t <= out_wid; ++t) {
+                ++out_data;
+                for (int64_t f = 0; f <= out_hi; ++f) {
+                    *out_data += *(out_data - out_hi - 2);
+                    ++out_data;
+                }
+            }
+
+            return cv::Rect2d(
+                min(header.tstart + t_lo * header.tsamp, header.tstart + t_hi * header.tsamp),
+                min(header.fch1 + f_lo * header.foff, header.fch1 + f_hi * header.foff),
+                (t_hi - t_lo) * fabs(header.tsamp), (f_hi - f_lo) * fabs(header.foff));
         }
 
         /* Get the file format name (e.g. sigproc filterbank) */
@@ -65,12 +154,13 @@ namespace watplot {
             return consts::TELESCOPES[header.telescope_id];
         }
 
-        // Sigproc filterbank header fields; not filled fields are: -1 for ints, empty strings, NAN floats
+        /** Sigproc filterbank header fields; not filled fields are:
+          * 0 for telescope/machine id, -1 for other ints, empty strings, NAN floats */
         struct Header {
             // telescope: 0 = fake data; 1 = Arecibo; 2 = Ooty... others to be added
-            int telescope_id = -1;
+            int telescope_id = 0;
             // machine: 0=FAKE; 1=PSPM; 2=WAPP; 3=OOTY... others to be added
-            int machine_id = -1;
+            int machine_id = 0;
             // data type: 1=blimpy; 2=time series... others to be added
             int data_type = -1;
             // the name of the original data file
@@ -151,6 +241,10 @@ namespace watplot {
         /* mean sample value */
         double mean_val = 0.0;
     protected:
+
+        /** basic constructor, checks if a file exists and if so loads from it */
+        BLFile(const std::string & path) { load(path); }
+
         /* rectangle containing all data */
         cv::Rect2d data_rect;
     };
@@ -166,10 +260,14 @@ namespace watplot {
         o << "Source:\t\t" << file.header.source_name << "\n";
         o << "Raw file:\t" << file.header.rawdatafile << "\n";
         o << "\nData Format\n";
-        o << "Time axis:\t\t" << file.nints << " timestamps\n Range:\t\t\t[" <<
-            file.timestamps.front() << ", " << file.timestamps.back() << "]\n";
-        o << "Frequency axis:\t\t" << file.header.nchans << " channels\n Range:\t\t\t[" <<
-            file.freqs.front() << ", " << file.freqs.back() << "]\n";
+        if (!file.timestamps.empty()) {
+            o << "Time axis:\t\t" << file.nints << " timestamps\n Range:\t\t\t[" <<
+                file.timestamps.front() << ", " << file.timestamps.back() << "]\n";
+        }
+        if (!file.freqs.empty()) {
+            o << "Frequency axis:\t\t" << file.header.nchans << " channels\n Range:\t\t\t[" <<
+                file.freqs.front() << ", " << file.freqs.back() << "]\n";
+        }
         o << "Bits per sample:\t" << file.header.nbits << "\n\nStatistics\n";
         o << "File size:\t\t" << file.file_size_bytes << " bytes (data: " << file.data_size_bytes << ")\n";
         o << "Approx min, mean, max:\t" << file.min_val << ", " << file.mean_val << ", " << file.max_val << "\n";

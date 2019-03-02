@@ -149,10 +149,13 @@ namespace watplot {
         double double_to_angle(double angle);
 
 
-        /** Applies viridis color map from matplotlib
+        /** Applies color map
+          * @param gray input gray image 8UC1
+          * @param color output color image 8UC3
+          * @param cmap_id color map id; 1...12 = OpenCV colormap 'id', 13 = viridis, 14 = gray
           * @param reverse if true, color map is reversed
           **/
-        void applyColorMapViridis(const cv::Mat& gray, cv::Mat& color, bool reverse=false);
+        void applyColorMap(const cv::Mat & gray, cv::Mat & color, bool reverse = false, int cmap_id = 13);
 
         /** Rounds a double to the given number of digits and returns as a string */
         std::string round(double dbl, int digs);

@@ -35,13 +35,17 @@ if ( CMAKE_COMPILER_IS_GNUCXX )
 endif ( CMAKE_COMPILER_IS_GNUCXX )
 
 FIND_PACKAGE( Eigen REQUIRED )
+FIND_PACKAGE( HDF5 COMPONENTS C CXX HL )
 FIND_PACKAGE( OpenCV REQUIRED )
 
-include_directories(${EIGEN_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+include_directories(${EIGEN_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${HIGH_FIVE_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS} )
+add_definitions(${EIGEN_DEFINITIONS})
 
 set(
   SOURCES
   filterbank.cpp
+  hdf5.cpp
+  renderer.cpp
   util.cpp
   stdafx.cpp
 )
@@ -50,7 +54,9 @@ set(
   HEADERS
   ${INCLUDE_DIR}/blfile.hpp
   ${INCLUDE_DIR}/filterbank.hpp
+  ${INCLUDE_DIR}/hdf5.hpp
   ${INCLUDE_DIR}/waterfall.hpp
+  ${INCLUDE_DIR}/renderer.hpp
   ${INCLUDE_DIR}/util.hpp
   ${INCLUDE_DIR}/fsutil.hpp
   ${INCLUDE_DIR}/tinydir.h
@@ -76,12 +82,13 @@ if ( MSVC )
     set( PRECOMPILED_HEADER "stdafx.h" )
     set( PRECOMPILED_SOURCE "stdafx.cpp" )
 
-    set_source_files_properties( ${PRECOMPILED_SOURCE}
-                                PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
-                                           OBJECT_OUTPUTS "${PRECOMPILED_HEADER}" )
     set_source_files_properties( ${SOURCES}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PRECOMPILED_HEADER}\" /FI\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
                                            OBJECT_DEPENDS "${PRECOMPILED_HEADER}" )
+    set_source_files_properties( ${PRECOMPILED_SOURCE}
+                                PROPERTIES COMPILE_FLAGS "/Yc\"${PRECOMPILED_HEADER}\" /Fp\"${PRECOMPILED_BINARY}\""
+                                           OBJECT_OUTPUTS "${PRECOMPILED_HEADER}" )
+                                           
     add_definitions( -D_CRT_SECURE_NO_WARNINGS )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /Ot" )
     set( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT" )
@@ -94,7 +101,7 @@ endif ( MSVC )
 add_executable( ${PROJ_NAME} main.cpp ${SOURCES} ${HEADERS} )
 target_include_directories( ${PROJ_NAME} PRIVATE ${INCLUDE_DIR} )
 set_target_properties( ${PROJ_NAME} PROPERTIES OUTPUT_NAME ${OUTPUT_NAME} )
-target_link_libraries( ${PROJ_NAME} ${OpenCV_LIBRARIES} )
+target_link_libraries( ${PROJ_NAME} ${OpenCV_LIBRARIES} ${HDF5_LIBRARIES} )
 
 if ( MSVC )
     set_property(TARGET ${PROJ_NAME} APPEND PROPERTY LINK_FLAGS /DEBUG)

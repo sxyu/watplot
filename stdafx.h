@@ -1,4 +1,6 @@
 #pragma once
+#define _FILE_OFFSET_BITS 64 
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -28,13 +30,21 @@
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
+
+// Eigen 3 (linear algebra)
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+// HDF5 library
+#define H5_BUILT_AS_DYNAMIC_LIB
+#include <H5Cpp.h>
+
+// OpenCV (for GUI, image processing)
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+// internal constants (telescope names, etc.)
 #include "consts.hpp"
 
 // compatibility

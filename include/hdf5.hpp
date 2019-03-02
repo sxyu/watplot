@@ -1,16 +1,17 @@
 #pragma once
 #include<string>
+#include<H5Cpp.h>
 #include "blfile.hpp"
 namespace watplot {
-    /* Implementation of filterbank file loader */
-    class Filterbank : public BLFile<Filterbank> {
-    friend class BLFile<Filterbank>;
+    /* Implementation of HDF5 file loader */
+    class HDF5 : public BLFile<HDF5> {
+    friend class BLFile<HDF5>;
     public:
-        typedef std::shared_ptr<Filterbank> Ptr;
+        typedef std::shared_ptr<HDF5> Ptr;
 
-        /* Load filterbank file from the given path */
-        explicit Filterbank(const std::string & path) : BLFile<Filterbank>(path) { }
-        int64_t header_end;
+        /* Load HDF5 file from the given path */
+        explicit HDF5(const std::string & path) : BLFile<HDF5>(path) { }
+
     protected:
         /* load implementation */
         void _load(const std::string & path);
@@ -20,5 +21,6 @@ namespace watplot {
                                                                    int64_t f_lo, int64_t f_hi, int64_t f_step) const;
 
         static const std::string FILE_FORMAT_NAME;
+        static const std::string DATASET_SUBSET_NAME;
     };
 }

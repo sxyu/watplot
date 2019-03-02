@@ -30,8 +30,6 @@ namespace watplot {
                 mp["period"] = 'd';
                 mp["src_raj"] = 'a';
                 mp["src_dej"] = 'a';
-                mp["HEADER_START"] = '!';
-                mp["HEADER_END"] = '!';
                 return mp;
         }
 
@@ -49,6 +47,25 @@ namespace watplot {
                 vec[64] = "MeerKAT";
                 vec[65] = "KAT7";
                 return vec;
+        }
+        static std::vector<std::string> _colormaps() {
+            std::vector<std::string> vec(15);
+            vec[0] = "cv_autumn";
+            vec[1] = "cv_bone";
+            vec[2] = "cv_jet";
+            vec[3] = "cv_winter";
+            vec[4] = "cv_rainbow";
+            vec[5] = "cv_ocean";
+            vec[6] = "cv_summer";
+            vec[7] = "cv_spring";
+            vec[8] = "cv_cool";
+            vec[9] = "cv_hsv";
+            vec[10] = "cv_pink";
+            vec[11] = "cv_hot";
+            vec[12] = "cv_parula";
+            vec[13] = "matplotlib_viridis";
+            vec[14] = "grayscale";
+            return vec;
         }
 
         static unsigned long long get_system_memory()
@@ -72,5 +89,7 @@ namespace watplot {
         static const std::vector<std::string> TELESCOPES;
         /* System memory size, in bytes */
         static const int64_t MEMORY;
+        /* Colormap names */
+        static const std::vector<std::string> COLORMAPS;
     };
 }

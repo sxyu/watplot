@@ -4,5 +4,7 @@ namespace watplot {
                                     = consts::_header_keyword_types();
     const std::vector<std::string> consts::TELESCOPES
                                  = consts::_telescopes();
+    const std::vector<std::string> consts::COLORMAPS
+                                 = consts::_colormaps();
     const int64_t consts::MEMORY = consts::get_system_memory();
 }

@@ -523,38 +523,48 @@ namespace watplot {
             { 0.993248, 0.906157, 0.143936 }
         };
 
-        void applyColorMapViridis(const cv::Mat & gray, cv::Mat & color, bool reverse)
+        void applyColorMap(const cv::Mat & gray, cv::Mat & color, bool reverse, int cmap_id)
         {
-            color = cv::Mat(gray.cols, gray.rows, CV_8UC3);
+            if (cmap_id < 13) {
+                cv::applyColorMap(gray, color, cmap_id);
+            }
+            else if (cmap_id == 14) {
+                cv::cvtColor(gray, color, CV_GRAY2BGR);
+            }
+            else if (cmap_id == 13) {
+                color = cv::Mat(gray.cols, gray.rows, CV_8UC3);
 
-            double lut_r[256];
-            double lut_g[256];
-            double lut_b[256];
+                static double lut_r[256] = { -1 };
+                static double lut_g[256];
+                static double lut_b[256];
 
-            if (reverse) {
-                for (int i = 0; i < 256; i++) {
-                    lut_r[i] = VIRIDIS[255-i][0] * 255;
-                    lut_g[i] = VIRIDIS[255-i][1] * 255;
-                    lut_b[i] = VIRIDIS[255-i][2] * 255;
+                if (lut_r[0] == -1) {
+                    for (int i = 0; i < 256; i++) {
+                        lut_r[i] = VIRIDIS[i][0] * 255;
+                        lut_g[i] = VIRIDIS[i][1] * 255;
+                        lut_b[i] = VIRIDIS[i][2] * 255;
+                    }
                 }
-            }
-            else {
-                for (int i = 0; i < 256; i++) {
-                    lut_r[i] = VIRIDIS[i][0] * 255;
-                    lut_g[i] = VIRIDIS[i][1] * 255;
-                    lut_b[i] = VIRIDIS[i][2] * 255;
+
+                cv::Mat p = gray.reshape(0, 1).clone();
+                cv::Mat c = color.reshape(0, 1).clone();
+                if (reverse) {
+                    for (int i = 0; i < p.cols; i++) {
+                        c.at<cv::Vec3b>(0, i)[0] = (uchar)lut_b[255 - p.at<uchar>(0, i)];
+                        c.at<cv::Vec3b>(0, i)[1] = (uchar)lut_g[255 - p.at<uchar>(0, i)];
+                        c.at<cv::Vec3b>(0, i)[2] = (uchar)lut_r[255 - p.at<uchar>(0, i)];
+                    }
                 }
-            }
+                else {
+                    for (int i = 0; i < p.cols; i++) {
+                        c.at<cv::Vec3b>(0, i)[0] = (uchar)lut_b[p.at<uchar>(0, i)];
+                        c.at<cv::Vec3b>(0, i)[1] = (uchar)lut_g[p.at<uchar>(0, i)];
+                        c.at<cv::Vec3b>(0, i)[2] = (uchar)lut_r[p.at<uchar>(0, i)];
+                    }
+                }
 
-            cv::Mat p = gray.reshape(0, 1).clone();
-            cv::Mat c = color.reshape(0, 1).clone();
-            for (int i = 0; i < p.cols; i++) {
-                c.at<cv::Vec3b>(0, i)[0] = (uchar)lut_b[p.at<uchar>(0, i)];
-                c.at<cv::Vec3b>(0, i)[1] = (uchar)lut_g[p.at<uchar>(0, i)];
-                c.at<cv::Vec3b>(0, i)[2] = (uchar)lut_r[p.at<uchar>(0, i)];
+                color = c.reshape(0, gray.rows);
             }
-
-            color = c.reshape(0, gray.rows);
         }
 
         std::string round(double dbl, int digs) {

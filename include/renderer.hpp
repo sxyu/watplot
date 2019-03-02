@@ -1,0 +1,118 @@
+#pragma once
+#include "util.hpp"
+
+namespace watplot {
+    /** Abstract base class for renderers */
+    class Renderer {
+    public:
+        typedef std::shared_ptr<Renderer> Ptr;
+
+        // terminology: render=what is displayed to user; view=chunk of data cached in memory, larger than render
+        /** Render to an image of size plot_size (must be implemented in child class)
+          * @param recompute_view 2=force recompute; 0=force use old view; 1=smart
+          * @param rendered image. CV_8UC3
+          */
+        cv::Mat render(int recompute_view = 1);
+
+        /** Get the plot size */
+        const cv::Size & get_plot_size() const;
+
+        /** Modify the plot size */
+        cv::Mat set_plot_size(const cv::Size & new_size);
+
+        /** Get the color scale and offset */
+        cv::Vec2f get_color_scale_offset() const;
+
+        /** Set the color scale and offset */
+        cv::Mat set_color_scale_offset(const cv::Vec2f & new_values);
+
+        /** Get the colormap.
+          * 0...14: 0...12 OpenCV colormaps 13 viridis, 14 grayscale (no map) */
+        int get_colormap() const;
+
+        /** Set the colormap */
+        cv::Mat set_colormap(int colormap);
+
+        /** Get the rendered rectangle */
+        const cv::Rect2d & get_render_rect() const;
+
+        /** Modify the rendered rectangle */
+        cv::Mat set_render_rect(const cv::Rect2d & new_rect);
+
+        /** Get the last render */
+        cv::Mat get_last_render() const;
+
+        /** Helper for projecting plot point to (time, frequency) space */
+        cv::Point2d plot_to_time_freq(cv::Point2d point) const;
+
+    protected:
+
+        /**
+         * Generic renderer constructor
+         * @param wind_name OpenCV window name. If empty, does not show plot (although image is still returned by render())
+         * @param init_render_rect initial rectangle to render (by default, renders entire file)
+         * @param plot_size size of output plot
+         * @param color if true, colors output plot
+         * @param colormap colormap to use. 0...14: 0...12 OpenCV colormaps
+                                                    13 viridis, 14 grayscale (no map)
+         * @param axes if true, draws axes and colorbar on output plot
+         */
+        Renderer(const std::string & wind_name, 
+            const cv::Rect & init_render_rect = cv::Rect(0, 0, 0, 0),
+            const cv::Size & plot_size = cv::Size(600, 400), bool color = true, int colormap = 13, bool axes = true)
+            : wind_name(wind_name), plot_size(plot_size), color(color), colormap(colormap), axes(axes) {
+            render_rect = init_render_rect;
+        }
+
+        /** render implmentation */
+        virtual cv::Mat _render(int recompute_view = 1) = 0;
+
+        /** update ratios*/
+        void update_dxy();
+
+        /** Helper for projecting plot point to view space */
+        inline cv::Point2d plot_to_view(cv::Point2d point) const;
+
+        /** Compute the power at a particular plot pixel */
+        float compute_pixel(const cv::Point2i & point) const;
+
+        /** Color scale */
+        float color_scale;
+
+        /** Color offset */
+        float color_offset;
+
+        /** Whether to color map the output plot */
+        bool color;
+
+        /** Colormap ID */
+        int colormap;
+
+        /** Whether to draw axes on output plot */
+        bool axes;
+
+        /** The output plot size */
+        cv::Size plot_size;
+
+        /** The current view */
+        Eigen::MatrixXd view;
+
+        /** The window name */
+        const std::string wind_name;
+
+        /** The boundaries of the current view */
+        cv::Rect2d view_rect;
+
+        /** The boundaries of the current render */
+        cv::Rect2d render_rect;
+
+        /** Last render */
+        cv::Mat last_render;
+
+        /** Amount by which view is larger than render; determined according to system memory size */
+        double view_scale_x, view_scale_y;
+
+        /** cached ratios */
+        double dx, dy, px, py;
+    };
+}

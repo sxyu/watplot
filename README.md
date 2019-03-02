@@ -11,6 +11,7 @@ A interactive waterfall plot for Breakthrough Listen data, supporting dragging, 
 *Dependencies:*
 
 - OpenCV 3.3+
+- HDF5 from [https://www.hdfgroup.org/downloads/](https://www.hdfgroup.org/downloads/)
 - Eigen 3 (included in repo)
 
 *Build:* Use cmake on all platforms: `mkdir build && cd build && cmake ..`
