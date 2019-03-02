@@ -109,39 +109,47 @@ int main(int argc, char** argv) {
 
     std::cout << std::fixed << std::setprecision(17);
     std::cerr << std::fixed << std::setprecision(17);
-    std::cout << "watplot v0.1.1 alpha - Interactive Waterfall Plotting Utility\n";
+    std::cout << "watplot v0.1.2 alpha - Interactive Waterfall Plotting Utility\n";
     std::cout << "(c) Alex Yu / Breakthrough Listen 2019\n\n";
-    std::cout << "supports: .fil .h5./hdf5\n";
+    std::cout << "formats supported: .fil .h5./hdf5\n";
 
-    if (argc != 2 && argc != 4 && argc != 6) {
-        std::cerr << "\nusage: watplot data_file_path [f_start[%] f_stop[%] [t_start[%] t_stop[%]]]\n\n";
-        std::cerr << "f_start, f_stop: frequency range. Append '%' to use percent of max range of data.\n";
+    bool stat = (argc >= 2 && strcmp(argv[1], "stat") == 0);
+
+    if (argc != 2 + stat && argc != 4 + stat && argc != 6 + stat) {
+        std::cerr << "\nusage: watplot [stat] <data_file_path> [f_start[%] f_stop[%] [t_start[%] t_stop[%]]]\n\n";
+        std::cerr << "stat: if specified, displays header information without loading (ignores f, t range).\n";
+        std::cerr << "f_start, f_stop: frequency range. Append '%' to use percent of max range of data, e.g., watplot file 0% 50%.\n";
         std::cerr << "t_start, t_stop: time range.\n";
         std::exit(0);
     }
 
-    std::cout << "Tips:\n- Right click and drag mouse to adjust colormap (horizontal: shift, vertical: scale)\n";
-    std::cout << "- Press c,shift+c to cycle through colormaps (15 total)\n";
-    std::cout << "- Use the scroll wheel OR -,= keys to zoom\n";
-    std::cout << "- Press 0 to reset zoom and position\n";
-    std::cout << "- Press s to save plot to ./waterfall-NUM.png\n";
-    std::cout << "- Press q or ESC to exit\n";
-    std::cout << "\n";
+    if (stat && argc != 3) {
+        std::cerr << "WARNING: stat specified, range arguments ignored\n";
+    }
+
+    if (!stat) {
+        std::cout << "Tips:\n- Right click and drag mouse to adjust colormap (horizontal: shift, vertical: scale)\n";
+        std::cout << "- Press c,shift+c to cycle through colormaps (15 total)\n";
+        std::cout << "- Use the scroll wheel OR -,= keys to zoom\n";
+        std::cout << "- Press 0 to reset zoom and position\n";
+        std::cout << "- Press s to save plot to ./waterfall-NUM.png\n";
+        std::cout << "- Press q or ESC to exit\n";
+        std::cout << "\n";
+    }
 
     std::cout << "Loading data headers, please wait...\n";
 
     //std::string path = "D:/bl/diag_frb121102.fil";
-    //std::string path = "D:/bl/diag_frb121102.fil";
-    //std::string path = "D:/bl/voyager.fil";
-    //std::string path = "D:/bl/random_star.h5";
-    std::string path = argv[1];
+    //std::string path = "/bl/diag_frb121102.fil";
+    //std::string path = "/bl/voyager.fil";
+    //std::string path = "/bl/random_star.h5";
+    std::string path = argv[1 + stat];
     std::string ext = path.substr(path.find_last_of(".") + 1);
 
     const std::string WIND_NAME = "Interactive Waterfall Plot - " + std::string(path);
     cv::namedWindow(WIND_NAME, cv::WINDOW_NORMAL);
     Renderer::Ptr watrend;
 
-    //path = argv[1];
     cv::Rect2d default_rect;
     if (ext == "fil") {
         Filterbank::Ptr fb = std::make_shared<Filterbank>(path);
@@ -159,8 +167,8 @@ int main(int argc, char** argv) {
     }
 
     if (argc >= 4) {
-        double f_start = parse_dbl(argv[2], default_rect.height, default_rect.y);
-        double f_stop = parse_dbl(argv[3], default_rect.height, default_rect.y);
+        double f_start = parse_dbl(argv[2 + stat], default_rect.height, default_rect.y);
+        double f_stop = parse_dbl(argv[3 + stat], default_rect.height, default_rect.y);
         if (f_start >= f_stop) {
             std::cerr << "Error: Frequency range is empty!\n";
             std::exit(6);
@@ -168,8 +176,8 @@ int main(int argc, char** argv) {
         default_rect.height = f_stop - f_start;
         default_rect.y = f_start;
         if (argc >= 6) {
-            double t_start = parse_dbl(argv[4], default_rect.width, default_rect.x);
-            double t_stop = parse_dbl(argv[5], default_rect.width, default_rect.x);
+            double t_start = parse_dbl(argv[4 + stat], default_rect.width, default_rect.x);
+            double t_stop = parse_dbl(argv[5 + stat], default_rect.width, default_rect.x);
             default_rect.width = t_stop - t_start;
             default_rect.x = t_start;
             if (t_start >= t_stop) {
@@ -178,6 +186,9 @@ int main(int argc, char** argv) {
             }
         }
     }
+
+    if (stat) { return 0; }
+
     watrend->set_render_rect(default_rect);
     cv::Mat init_rend = watrend->render(2);
 
