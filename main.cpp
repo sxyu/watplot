@@ -8,6 +8,7 @@ namespace {
     {
         static int mouse_down;
         static int mouse_down_x, mouse_down_y;
+        static int mouse_x, mouse_y;
         static cv::Rect2d rect;
         static cv::Size plot_size;
         static double scalex, scaley;
@@ -44,7 +45,11 @@ namespace {
         {
             mouse_down = 0;
         }
-        else if (event == cv::EVENT_MOUSEWHEEL)
+        else if (event == cv::EVENT_MOUSEWHEEL
+#ifndef _WIN32
+                || event == cv::EVENT_MOUSEHWHEEL
+#endif
+                )
         {
             // wheel scrolling, if supported (currently only on Windows sadly)
             rect = watrend->get_render_rect();
@@ -55,13 +60,15 @@ namespace {
             // this works for thinkpad pointing stick + middle button on Ubuntu
             double scale = 1.0 + delt / 1e2;
 #endif
-            cv::Point2d p = watrend->plot_to_time_freq(cv::Point2d(x, y));
+            cv::Point2d p = watrend->plot_to_time_freq(cv::Point2d(mouse_x, mouse_y));
             cv::Rect2d new_rect(rect.x - (p.x - rect.x) * (scale - 1.0), rect.y - (p.y - rect.y) * (scale - 1.0),
                 rect.width * scale, rect.height * scale);
             watrend->set_render_rect(new_rect);
         }
         else if (event == cv::EVENT_MOUSEMOVE)
         {
+            mouse_x = x;
+            mouse_y = y;
             if (mouse_down == 1) {
                 cv::Rect2d new_rect(rect.x + (y - mouse_down_y) * scalex, rect.y - (x - mouse_down_x) * scaley,
                     rect.width, rect.height);

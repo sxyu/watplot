@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "HDF5.hpp"
+#include "hdf5.hpp"
 #include "util.hpp"
 
 namespace {

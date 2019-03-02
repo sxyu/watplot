@@ -157,7 +157,7 @@ namespace watplot {
                 }
                 for (int i = 30; i < 250; i += 23) {
                     double power_db = 10 * log10(i / color_scale - color_offset);
-                    if (isnan(power_db)) continue;
+                    if (std::isnan(power_db)) continue;
                     cv::putText(cb_color, util::round(power_db, 2),
                         cv::Point(10, cb_color.rows * (255 - i) / 255 + 5), 0, 0.4, cv::Scalar(255, 255, 255));
                 }
