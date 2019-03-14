@@ -11,14 +11,14 @@ A interactive waterfall plot for Breakthrough Listen data, supporting dragging, 
 *Dependencies:*
 
 - OpenCV 3.3+
+    - `sudo apt-get install libopencv-dev` on Ubuntu
 - HDF5 from [https://www.hdfgroup.org/downloads/](https://www.hdfgroup.org/downloads/)
+    - `sudo apt-get install libhdf5-dev` on Ubuntu
 - Eigen 3 (included in repo)
 
 *Build:* Use cmake on all platforms: `mkdir build && cd build && cmake ..`
 
-Then use `make -j4` to build. On Windows, you may double-click the sln file generated to open Visual Studio to build.
-
-You may need to specify the installation directory for OpenCV, OpenCV_dir.
+Then use `make -j4` to build. On Windows, you may double-click the sln file generated to open Visual Studio to build. You might also need to specify the installation directory for OpenCV, OpenCV_dir.
 
 ## Usage
 
@@ -29,9 +29,13 @@ You may need to specify the installation directory for OpenCV, OpenCV_dir.
 
 - left click and drag to move
 
-- mouse wheel to zoom
+- mouse wheel or use `+`, `=` keys to zoom
+
+- `0` to reset zoom and position to initial
 
 - right click and drag to adjust colormap (vertically: scale color range, horizontally: shift color range). Initially, the program will try to find a good colormap, but sometimes adjusting will reveal features in the data.
+
+- `c`, `C` keys to cycle through colormaps
 
 - `s` to save the plot to disk (will be waterfall-xxx.png)
 
