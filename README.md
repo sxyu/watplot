@@ -18,7 +18,7 @@ A interactive waterfall plot for Breakthrough Listen data, supporting dragging, 
 
 *Build:* Use cmake on all platforms: `mkdir build && cd build && cmake ..`
 
-Then use `make -j4` to build. On Windows, you may double-click the sln file generated to open Visual Studio to build. You might also need to specify the installation directory for OpenCV, OpenCV_dir.
+Then use `make -j4` to build. On Windows, you may double-click the sln file generated to open Visual Studio to build. You might also need to specify the installation directory for OpenCV, by passing `-DOpenCV_dir='path'` to cmake.
 
 ## Usage
 
@@ -29,7 +29,7 @@ Where
 - `file` may be a Filterbank (.fil) or HDF5 (.h5) data file in the Breakthrough Listen format
 - `f_start, f_end` specify the frequency range, default everything
 - `t_start, t_end` specify the time range, default everything
-- Append % after any frequency or time value to use a percent of the data instead of specifying the explicit percentage.
+- Append % after any frequency or time value to use a percent of the data instead of specifying the explicit values.
     - For example, `watplot file.fil 0% 50%` loads the lower half of the frequencies
 
 *GUI Controls:*
