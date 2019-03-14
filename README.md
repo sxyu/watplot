@@ -22,10 +22,17 @@ Then use `make -j4` to build. On Windows, you may double-click the sln file gene
 
 ## Usage
 
-`watplot file.fil`
+On the Breakthrough Listen computing cluster:
+`watplot file [f_start[%] f_stop[%] [t_start[%] t_end[%]]]`
 
+Where
+- `file` may be a Filterbank (.fil) or HDF5 (.h5) data file in the Breakthrough Listen format
+- `f_start, f_end` specify the frequency range, default everything
+- `t_start, t_end` specify the time range, default everything
+- Append % after any frequency or time value to use a percent of the data instead of specifying the explicit percentage.
+    - For example, `watplot file.fil 0% 50%` loads the lower half of the frequencies
 
-*Controls:*
+*GUI Controls:*
 
 - left click and drag to move
 
