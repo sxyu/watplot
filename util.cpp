@@ -529,7 +529,7 @@ namespace watplot {
                 cv::applyColorMap(gray, color, cmap_id);
             }
             else if (cmap_id == 14) {
-                cv::cvtColor(gray, color, CV_GRAY2BGR);
+                cv::cvtColor(gray, color, cv::COLOR_GRAY2BGR);
             }
             else if (cmap_id == 13) {
                 color = cv::Mat(gray.cols, gray.rows, CV_8UC3);

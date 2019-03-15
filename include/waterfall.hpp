@@ -93,7 +93,7 @@ namespace watplot {
                 util::applyColorMap(wat_gray, wat_color, false, colormap);
             }
             else {
-                cv::cvtColor(wat_gray, wat_color, CV_GRAY2BGR);
+                cv::cvtColor(wat_gray, wat_color, cv::COLOR_GRAY2BGR);
             }
 
             if (axes) {
@@ -137,7 +137,7 @@ namespace watplot {
                     util::applyColorMap(spectrum_gray, spectrum_color, false, colormap);
                 }
                 else {
-                    cv::cvtColor(spectrum_gray, spectrum_color, CV_GRAY2BGR);
+                    cv::cvtColor(spectrum_gray, spectrum_color, cv::COLOR_GRAY2BGR);
                 }
                 cv::putText(spectrum_color, "Spectrum", cv::Point(10, spectrum_color.rows - 15), 0, 0.35,
                     cv::Scalar(50, 50, 255));
@@ -155,7 +155,7 @@ namespace watplot {
                     util::applyColorMap(cb_gray, cb_color, false, colormap);
                 }
                 else {
-                    cv::cvtColor(cb_gray, cb_color, CV_GRAY2BGR);
+                    cv::cvtColor(cb_gray, cb_color, cv::COLOR_GRAY2BGR);
                 }
                 for (int i = 30; i < 250; i += 23) {
                     double power_db = 10 * log10(i / color_scale - color_offset);
