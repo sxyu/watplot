@@ -4,7 +4,7 @@
 This is a work in progress.
 
 ## Overview
-A interactive waterfall plot for Breakthrough Listen data, supporting dragging, zooming, and adjusting colormaps on-the-fly for small to moderately large(1-2GB) files. Currently, only .fil (sigproc filterbank) files are supported. HDF5 support is planned.
+A interactive waterfall plot visualizer for Breakthrough Listen data, supporting dragging, zooming, and adjusting colormaps on-the-fly for small to moderately large (1-2GB) files. Currently, .fil (sigproc filterbank) files and .h5/.hdf5 (HDF5) files are supported.
 
 ## Build
 
