@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     if (argc != 2 + stat && argc != 4 + stat && argc != 6 + stat) {
         std::cerr << "\nusage: watplot [stat] <data_file_path> [f_start[%] f_stop[%] [t_start[%] t_stop[%]]]\n\n";
         std::cerr << "stat: if specified, displays header information without loading (ignores f, t range).\n";
-        std::cerr << "f_start, f_stop: frequency range. Append '%' to use percent of max range of data, e.g., watplot file 0% 50%.\n";
+        std::cerr << "f_start, f_stop: frequency range. Append '%' to use percent of max range of data,\n                 e.g., watplot file 0% 50%.\n";
         std::cerr << "t_start, t_stop: time range.\n";
         std::exit(0);
     }
