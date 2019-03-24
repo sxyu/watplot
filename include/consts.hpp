@@ -89,6 +89,7 @@ namespace watplot {
         static const std::vector<std::string> TELESCOPES;
         /* System memory size, in bytes */
         static const int64_t MEMORY;
+
         /* Colormap names */
         static const std::vector<std::string> COLORMAPS;
     };

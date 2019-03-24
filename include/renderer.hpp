@@ -14,36 +14,47 @@ namespace watplot {
           */
         cv::Mat render(int recompute_view = 1);
 
-        /** Get the plot size */
-        const cv::Size & get_plot_size() const;
-
-        /** Modify the plot size */
-        cv::Mat set_plot_size(const cv::Size & new_size);
-
-        /** Get the color scale and offset */
-        cv::Vec2f get_color_scale_offset() const;
-
-        /** Set the color scale and offset */
-        cv::Mat set_color_scale_offset(const cv::Vec2f & new_values);
-
-        /** Get the colormap.
-          * 0...14: 0...12 OpenCV colormaps 13 viridis, 14 grayscale (no map) */
-        int get_colormap() const;
-
-        /** Set the colormap */
-        cv::Mat set_colormap(int colormap);
-
-        /** Get the rendered rectangle */
-        const cv::Rect2d & get_render_rect() const;
-
-        /** Modify the rendered rectangle */
-        cv::Mat set_render_rect(const cv::Rect2d & new_rect);
-
         /** Get the last render */
         cv::Mat get_last_render() const;
 
         /** Helper for projecting plot point to (time, frequency) space */
         cv::Point2d plot_to_time_freq(cv::Point2d point) const;
+
+
+        /** render parameters */
+
+        /** The output plot size */
+        cv::Size plot_size;
+
+        /** The boundaries of the current render */
+        cv::Rect2d render_rect;
+        
+
+        /** Whether to color map the output plot */
+        bool color;
+
+        /** Color scale for linear scale */
+        float color_scale;
+
+        /** Color offset for linear scale */
+        float color_offset;
+
+        /** Color scale for log scale */
+        float log_color_scale;
+
+        /** Color offset for log scale */
+        float log_color_offset;
+
+        /** Colormap ID 
+          * 0...14: 0...12 OpenCV colormaps 13 viridis,
+          * 14 grayscale (no map) */
+        int colormap;
+
+        /** Whether to draw axes on output plot */
+        bool axes;
+
+        /** Whether log scale is used for coloring output */
+        bool log_scale = false;
 
     protected:
 
@@ -76,24 +87,6 @@ namespace watplot {
         /** Compute the power at a particular plot pixel */
         float compute_pixel(const cv::Point2i & point) const;
 
-        /** Color scale */
-        float color_scale;
-
-        /** Color offset */
-        float color_offset;
-
-        /** Whether to color map the output plot */
-        bool color;
-
-        /** Colormap ID */
-        int colormap;
-
-        /** Whether to draw axes on output plot */
-        bool axes;
-
-        /** The output plot size */
-        cv::Size plot_size;
-
         /** The current view */
         Eigen::MatrixXd view;
 
@@ -102,9 +95,6 @@ namespace watplot {
 
         /** The boundaries of the current view */
         cv::Rect2d view_rect;
-
-        /** The boundaries of the current render */
-        cv::Rect2d render_rect;
 
         /** Last render */
         cv::Mat last_render;

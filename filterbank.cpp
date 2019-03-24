@@ -103,50 +103,10 @@ namespace watplot {
         header_end = _read_header(ifs, header);
         data_size_bytes = file_size_bytes - header_end;
 
-        // read some data to estimate mean, etc. for initializing plot
-        int64_t nbytes = (header.nbits / 8);
-        int64_t bufsize = int64_t(min(max(consts::MEMORY / 10, 10), int(2e8) / nbytes));
-        char * buf = new char[bufsize + 1];
-        int64_t total = 0;
-        //while (true) {
-        ifs.read(buf, bufsize);
-        int64_t nread = ifs.gcount() / nbytes;
-        total += nread;
-
-        if (nbytes == 4) {
-            // float
-            Eigen::Map<Eigen::VectorXf> map((float*)buf, nread);
-            max_val = max(double(map.maxCoeff()), max_val);
-            min_val = min(double(map.minCoeff()), min_val);
-            mean_val += map.sum();
-        }
-        else if (nbytes == 8) {
-            // double
-            Eigen::Map<Eigen::VectorXd> map((double*)buf, nread);
-            max_val = max(map.maxCoeff(), max_val);
-            min_val = min(map.minCoeff(), min_val);
-            mean_val += map.sum();
-        }
-        else if (nbytes == 2) {
-            // 16 bit int
-            Eigen::Map<Eigen::Matrix<uint16_t, Eigen::Dynamic, 1>> map((uint16_t*) buf, nread);
-            max_val = max(double(map.maxCoeff()), max_val);
-            min_val = min(double(map.minCoeff()), min_val);
-            mean_val += map.cast<double>().sum();
-        }
-        else if (nbytes == 1) {
-            // 8 bit int
-            Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, 1>> map((uint8_t*) buf, nread);
-            max_val = max(double(map.maxCoeff()) * 256, max_val);
-            min_val = min(double(map.minCoeff()) * 256, min_val);
-            mean_val += map.cast<double>().sum() * 256;
-        }
-        else {
+        if (header.nbits != 8 && header.nbits != 16 && header.nbits != 32 && header.nbits != 64) {
             std::cerr << "Error: Unsupported data width: " << header.nbits << " (only 8, 16, 32 bit data supported)\n";
             std::exit(4);
         }
-
-        mean_val /= total;
     }
 
     void Filterbank::_view(const cv::Rect2d & rect, Eigen::MatrixXd & out, int64_t t_lo, int64_t t_hi, int64_t t_step, 

@@ -47,10 +47,8 @@ namespace watplot {
                 view_scale_x = floor(mem_limit / (file->header.nchans * dtype_wid)) / plot_size.height;
             }
 
-            static const float COLOR_FACT = 1.2f, MAX_FACT = 3.5e-4f;
-            float mean_scaled = ((1.f - MAX_FACT) * float(file->mean_val) + MAX_FACT * float(file->max_val));
-            color_scale = 255.f / (mean_scaled * COLOR_FACT - float(file->min_val) / COLOR_FACT);
-            color_offset = -float(file->min_val) / COLOR_FACT;
+            color_scale = NAN;
+            log_color_scale = NAN;
         }
 
     protected:
@@ -77,7 +75,7 @@ namespace watplot {
                 for (pt.y = int(i); pt.y < wat_raw.rows; pt.y += N_THREADS) {
                     float * ptr = wat_raw.ptr<float>(pt.y);
                     for (pt.x = 0; pt.x < wat_raw.cols; ++pt.x) {
-                        ptr[pt.x] = (compute_pixel(pt) + color_offset) * color_scale;
+                        ptr[pt.x] = compute_pixel(pt);
                     }
                 }
             };
@@ -88,6 +86,42 @@ namespace watplot {
                 thd_mgr[i].join();
             }
 
+            cv::Point2i pt;
+
+            // initialize color scale, if needed
+            static const float COLOR_FACT = 1.0, MIN_CUTOFF_LOG = 0.1;
+            if (std::isnan(color_scale)) {
+                float min_val = FLT_MAX, max_val = 0.0;
+                for (pt.y = 0; pt.y < wat_raw.rows; ++pt.y) {
+                    float * ptr = wat_raw.ptr<float>(pt.y);
+                    for (pt.x = 0; pt.x < wat_raw.cols; ++pt.x) {
+                        //mean_val += ptr[pt.x] / wat_raw.rows / wat_raw.cols;
+                        max_val = max(ptr[pt.x], max_val);
+                        min_val = min(ptr[pt.x], min_val);
+                    }
+                }
+                if (min_val != 0.0 || max_val != 0.0) {
+                    float min_scaled = log10(max(((1.f - MIN_CUTOFF_LOG) * min_val + MIN_CUTOFF_LOG * max_val), 1e-4));
+                    log_color_scale = 255.f / (log10(max_val) - min_scaled);
+                    log_color_offset = -min_scaled;
+                    color_scale = 255.f / (max_val * COLOR_FACT - min_val / COLOR_FACT);
+                    color_offset = -min_val / COLOR_FACT;
+                }
+            } 
+
+            // scale colors
+            for (pt.y = 0; pt.y < wat_raw.rows; ++pt.y) {
+                float * ptr = wat_raw.ptr<float>(pt.y);
+                for (pt.x = 0; pt.x < wat_raw.cols; ++pt.x) {
+                    if (log_scale) {
+                        ptr[pt.x] = (log10(ptr[pt.x]) + log_color_offset) * log_color_scale;
+                    } else{
+                        ptr[pt.x] = (ptr[pt.x] + color_offset) * color_scale;
+                    }
+                }
+            }
+
+            // convert to CV_8U format
             wat_raw.convertTo(wat_gray, CV_8U);
             if (color) {
                 util::applyColorMap(wat_gray, wat_color, false, colormap);
@@ -120,7 +154,7 @@ namespace watplot {
                 spectrum_gray = 0;
                 for (int j = 0; j < plot_size.height; j += plot_size.height / 60) {
                     for (int i = 0; i < plot_size.width; ++i) {
-                        int pix = wat_gray.at<uint8_t>(j, i);
+                        int pix = wat_raw.at<float>(j, i);
                         int h = static_cast<int>(pix) * spectrum_height / 256;
                         if (h <= 0 || h >= spectrum_height) continue;
                         cv::Point pt(i, spectrum_height - h - 1 + spectrum_pad_top_bot);
@@ -158,7 +192,12 @@ namespace watplot {
                     cv::cvtColor(cb_gray, cb_color, cv::COLOR_GRAY2BGR);
                 }
                 for (int i = 30; i < 250; i += 23) {
-                    double power_db = 10 * log10(i / color_scale - color_offset);
+                    double power_db;
+                    if (log_scale) {
+                        power_db = 10 * (i / log_color_scale - log_color_offset);
+                    } else {
+                        power_db = 10 * log10(i / color_scale - color_offset);
+                    }
                     if (std::isnan(power_db)) continue;
                     cv::putText(cb_color, util::round(power_db, 2),
                         cv::Point(10, cb_color.rows * (255 - i) / 255 + 5), 0, 0.4, cv::Scalar(255, 255, 255));

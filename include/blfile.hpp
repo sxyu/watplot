@@ -9,9 +9,6 @@ namespace watplot {
     template <class ImplType>
     class BLFile {
     public:
-        /** Threshold (GB) above which file is considered large */
-        static const int LARGE_FILE_THRESH = 5;
-
         /** Read data file from a path (reads header, 'skims' data without loading it) */
         void load(const std::string & path) {
             file_path = path;
@@ -21,11 +18,6 @@ namespace watplot {
                 std::exit(1);
             }
             file_size_bytes = in.tellg();
-
-            if (file_size_bytes > LARGE_FILE_THRESH * 1e9) {
-                std::cerr << "WARNING: file exceeds " << LARGE_FILE_THRESH << "GB; may take a while to load.\n";
-            }
-
             in.close();
 
             static_cast<ImplType *>(this)->_load(path);
@@ -232,15 +224,6 @@ namespace watplot {
         /* path to data file */
         std::string file_path;
 
-        // statistics
-        /* minimum sample value */
-        double min_val = DBL_MAX;
-
-        /* maximum sample value */
-        double max_val = -DBL_MAX;
-
-        /* mean sample value */
-        double mean_val = 0.0;
     protected:
 
         /** basic constructor, checks if a file exists and if so loads from it */
@@ -271,7 +254,6 @@ namespace watplot {
         }
         o << "Bits per sample:\t" << file.header.nbits << "\n\nStatistics\n";
         o << "File size:\t\t" << file.file_size_bytes << " bytes (data: " << file.data_size_bytes << ")\n";
-        o << "Approx min, mean, max:\t" << file.min_val << ", " << file.mean_val << ", " << file.max_val << "\n";
         o << "---------------------------------\n";
         return o;
     }

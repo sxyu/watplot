@@ -9,45 +9,6 @@ namespace watplot {
         return res;
     }
 
-    const cv::Size & Renderer::get_plot_size() const {
-        return plot_size;
-    }
-
-    cv::Mat Renderer::set_plot_size(const cv::Size & new_size) {
-        plot_size = new_size;
-        return render();
-    }
-
-    cv::Vec2f Renderer::get_color_scale_offset() const {
-        return cv::Vec2f(color_scale, color_offset);
-    }
-
-    cv::Mat Renderer::set_color_scale_offset(const cv::Vec2f & new_values) {
-        color_scale = new_values[0];
-        color_offset = new_values[1];
-        return render();
-    }
-
-    int Renderer::get_colormap() const
-    {
-        return colormap;
-    }
-
-    cv::Mat Renderer::set_colormap(int colormap)
-    {
-        this->colormap = colormap;
-        return render();
-    }
-
-    const cv::Rect2d & Renderer::get_render_rect() const {
-        return render_rect;
-    }
-
-    cv::Mat Renderer::set_render_rect(const cv::Rect2d & new_rect) {
-        render_rect = new_rect;
-        return render();
-    }
-
     cv::Mat Renderer::get_last_render() const {
         return last_render;
     }
