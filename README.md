@@ -33,20 +33,19 @@ Where
     - For example, `watplot file.fil 0% 50%` loads the lower half of the frequencies
 
 *GUI Controls:*
-
-- left click and drag to move
-
-- mouse wheel or use `+`, `=` keys to zoom
-
-- `0` to reset zoom and position to initial
-
-- right click and drag to adjust colormap (vertically: scale color range, horizontally: shift color range). Initially, the program will try to find a good colormap, but sometimes adjusting will reveal features in the data.
-
-- `c`, `C` keys to cycle through colormaps
-
-- `s` to save the plot to disk (will be waterfall-xxx.png)
-
-- `q` to quit
+- Left click and drag mouse OR use WASD to pan
+- To zoom, use:
+  - The scroll wheel OR
+  - `-`,`=` keys OR
+  - `Control + Shift + Left click` and drag vertically
+- `Control + Left click` and drag to zoom asymmetrically
+  - Drag horizontally for frequency, vertically for time
+- Press `0` to reset zoom and position
+- Right click and drag mouse to adjust colormap (horizontal: shift, vertical: scale)
+- Press `C`, `Shift + C` to cycle through colormaps (15 total)
+- Press `L` to toggle log scale
+- Press `Shift + S` to save plot to ./waterfall-NUM.png
+- Press `Q` or `ESC` to exit
 
 Sample data (Voyager): [https://storage.googleapis.com/gbt_fil/voyager_f1032192_t300_v2.fil](https://storage.googleapis.com/gbt_fil/voyager_f1032192_t300_v2.fil)
 
